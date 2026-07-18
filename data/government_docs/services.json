@@ -1,0 +1,104 @@
+[
+  {
+    "service_name": "Birth Certificate",
+    "department": "Municipal Corporation of Delhi (MCD)",
+    "eligibility": "Any citizen born within the territorial jurisdiction of NCT of Delhi.",
+    "required_documents": [
+      "Aadhaar Card of Parents",
+      "Address Proof (Voter ID, Electricity Bill, etc.)",
+      "Hospital Birth Record / Discharge Summary"
+    ],
+    "fees": "₹20 for a printed copy, free for first digital copy.",
+    "processing_time": "7-15 days",
+    "how_to_apply": [
+      "Step 1: Visit the official MCD portal (mcdonline.nic.in).",
+      "Step 2: Register or log in to the citizen portal.",
+      "Step 3: Navigate to 'Birth & Death Registration' and fill out the online form.",
+      "Step 4: Upload the required documents.",
+      "Step 5: Pay the fee and submit. A registration number will be generated for tracking."
+    ],
+    "official_source": "https://mcdonline.nic.in"
+  },
+  {
+    "service_name": "Driving Licence",
+    "department": "Delhi Transport Department",
+    "eligibility": "Must be 18 years or older, must possess a valid Learner's Licence.",
+    "required_documents": [
+      "Valid Learner's Licence",
+      "Aadhaar Card",
+      "Recent Passport Size Photographs",
+      "Address Proof"
+    ],
+    "fees": "₹200 for DL test, ₹200 for smart card.",
+    "processing_time": "15-30 days",
+    "how_to_apply": [
+      "Step 1: Visit the Parivahan Sewa portal (parivahan.gov.in).",
+      "Step 2: Select 'Driving Licence Related Services' and choose Delhi.",
+      "Step 3: Click 'Apply for Driving Licence'.",
+      "Step 4: Enter Learner's Licence details and upload documents.",
+      "Step 5: Book a slot for the driving test, pay the fee, and appear for the test."
+    ],
+    "official_source": "https://parivahan.gov.in"
+  },
+  {
+    "service_name": "Income Certificate",
+    "department": "Revenue Department, GNCTD",
+    "eligibility": "Permanent resident of Delhi.",
+    "required_documents": [
+      "Aadhaar Card",
+      "Ration Card or Voter ID",
+      "Passport size photograph",
+      "Old Income Certificate (if any)"
+    ],
+    "fees": "Nil (No fees for online application).",
+    "processing_time": "14 days",
+    "how_to_apply": [
+      "Step 1: Visit the Delhi e-District portal (edistrict.delhigovt.nic.in).",
+      "Step 2: Register/Login and go to 'Apply for Services'.",
+      "Step 3: Select 'Issuance of Income Certificate'.",
+      "Step 4: Fill the form, upload self-attested documents, and submit.",
+      "Step 5: Keep the application number for status tracking."
+    ],
+    "official_source": "https://edistrict.delhigovt.nic.in"
+  },
+  {
+    "service_name": "Property Tax",
+    "department": "Municipal Corporation of Delhi (MCD)",
+    "eligibility": "Property owners within the jurisdiction of MCD.",
+    "required_documents": [
+      "Unique Property Identification Code (UPIC)",
+      "Previous Property Tax Receipt (optional)",
+      "Property Ownership Documents (if UPIC not generated)"
+    ],
+    "fees": "Varies based on property unit area value, age, and use.",
+    "processing_time": "Instant digital receipt generation upon payment.",
+    "how_to_apply": [
+      "Step 1: Visit the MCD portal (mcdonline.nic.in).",
+      "Step 2: Select 'Property Tax' and choose your zone.",
+      "Step 3: Enter UPIC to fetch property details.",
+      "Step 4: Calculate tax using the online calculator.",
+      "Step 5: Pay online using Net Banking, UPI, or Cards to get the receipt."
+    ],
+    "official_source": "https://mcdonline.nic.in"
+  },
+  {
+    "service_name": "Water Connection",
+    "department": "Delhi Jal Board (DJB)",
+    "eligibility": "Residents or property owners in Delhi requiring a fresh water connection.",
+    "required_documents": [
+      "Proof of Ownership/Occupancy (Registry, Power of Attorney)",
+      "Identity Proof (Aadhaar Card)",
+      "NOC from the owner (if tenant)"
+    ],
+    "fees": "Varies between ₹500 to ₹3000 depending on plot size and usage.",
+    "processing_time": "15 to 30 days after document verification.",
+    "how_to_apply": [
+      "Step 1: Go to DJB's Revenue Management System (djb.gov.in).",
+      "Step 2: Click on 'Apply for New Connection'.",
+      "Step 3: Fill out the application form with property details.",
+      "Step 4: Upload scanned copies of the required documents.",
+      "Step 5: Pay the application fee and track the application status."
+    ],
+    "official_source": "https://djb.gov.in"
+  }
+]
