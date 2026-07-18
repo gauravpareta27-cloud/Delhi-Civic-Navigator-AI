@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delhi Civic Navigator AI</title>
+  <meta name="description" content="Get official document checklists for Delhi government services in seconds, powered by AI and Elasticsearch." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b1120;
+      --surface:   #131c2e;
+      --surface2:  #1a2540;
+      --border:    rgba(255,255,255,0.08);
+      --green:     #22c55e;
+      --green-dim: rgba(34,197,94,0.15);
+      --green-glow:rgba(34,197,94,0.25);
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --radius:    16px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Navbar ─── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      height: 64px;
+      background: rgba(11,17,32,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 17px;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .navbar-brand span { color: var(--green); }
+    .navbar-brand-icon {
+      font-size: 22px;
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 10px;
+      width: 36px; height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .navbar-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .navbar-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 7px 14px;
+      border-radius: 10px;
+      transition: color .2s, background .2s;
+    }
+    .navbar-links a:hover { color: var(--text); background: var(--surface); }
+    .navbar-links a.active { color: var(--green); background: var(--green-dim); }
+    .navbar-cta {
+      background: var(--green);
+      color: #000 !important;
+      font-weight: 700 !important;
+      padding: 7px 18px !important;
+      border-radius: 10px !important;
+    }
+    .navbar-cta:hover { background: #16a34a; color: #000 !important; }
+    @media(max-width:600px) {
+      .navbar { padding: 0 16px; }
+      .navbar-links a { padding: 6px 10px; font-size: 13px; }
+    }
+
+    /* ─── Background blobs ─── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+    .blob-1 { width: 500px; height: 500px; background: #16543a; top: -150px; left: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: #1e3a5f; bottom: -100px; right: -80px; }
+
+    /* ─── Layout ─── */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 20px 80px;
+    }
+
+    /* ─── Hero ─── */
+    .hero { text-align: center; margin-bottom: 40px; animation: fadeUp .6s ease both; }
+    .hero-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px; height: 72px;
+      border-radius: 20px;
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      font-size: 36px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 40px var(--green-glow);
+    }
+    h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 800; line-height: 1.1; margin-bottom: 12px; }
+    h1 span { color: var(--green); }
+    .tagline { color: var(--muted); font-size: 17px; max-width: 500px; margin: 0 auto; }
+
+    /* ─── Search box ─── */
+    .search-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 6px 6px 18px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      transition: box-shadow .3s, border-color .3s;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .search-wrap:focus-within {
+      border-color: rgba(34,197,94,0.5);
+      box-shadow: 0 0 30px rgba(34,197,94,0.12);
+    }
+    .search-icon { font-size: 20px; color: var(--muted); flex-shrink: 0; }
+    #query {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 16px;
+      font-family: inherit;
+      padding: 10px 0;
+    }
+    #query::placeholder { color: var(--muted); }
+    #searchBtn {
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      font-family: inherit;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 28px;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    #searchBtn:hover  { background: #16a34a; }
+    #searchBtn:active { transform: scale(.97); }
+    #searchBtn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ─── Chips ─── */
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 16px;
+      animation: fadeUp .6s .2s ease both;
+    }
+    .chip-label { color: var(--muted); font-size: 13px; align-self: center; }
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background .2s, border-color .2s, color .2s;
+      font-family: inherit;
+    }
+    .chip:hover { background: var(--surface2); border-color: rgba(34,197,94,0.4); color: var(--green); }
+
+    /* ─── Spinner ─── */
+    .spinner-wrap { text-align: center; padding: 48px; display: none; }
+    .spinner {
+      display: inline-block;
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    .spinner-wrap p { margin-top: 16px; color: var(--muted); font-size: 14px; }
+
+    /* ─── Error ─── */
+    .error-box {
+      margin-top: 24px;
+      padding: 16px 20px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius);
+      color: #f87171;
+      font-size: 14px;
+      display: none;
+      animation: fadeUp .4s ease;
+    }
+
+    /* ─── Result card ─── */
+    .result {
+      margin-top: 36px;
+      display: none;
+      animation: fadeUp .5s ease;
+    }
+    .result-header {
+      padding: 28px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border: 1px solid var(--border);
+      border-bottom: none;
+    }
+    .service-name {
+      font-size: 26px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .dept-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    /* ─── Stats grid ─── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 20px 28px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .stat-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-value { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+    /* ─── Body sections ─── */
+    .result-body {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 24px 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media(max-width:640px) { .result-body { grid-template-columns: 1fr; } }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 12px;
+    }
+    .section-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .section-box p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
+    .doc-list { list-style: none; }
+    .doc-list li {
+      font-size: 14px;
+      color: #94a3b8;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .doc-list li:last-child { border-bottom: none; }
+    .doc-list li::before { content: '•'; color: var(--green); flex-shrink: 0; }
+
+    .steps-list { list-style: none; }
+    .step-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .step-item:last-child { border-bottom: none; }
+    .step-num {
+      min-width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* ─── Footer cite ─── */
+    .cite-bar {
+      margin-top: 0;
+      padding: 14px 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 1.5s infinite;
+      margin-right: 6px;
+    }
+    .cite-label { font-size: 12px; color: var(--muted); }
+    .cite-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--green);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .cite-link:hover { color: #4ade80; }
+
+    /* ─── Footer ─── */
+    footer { text-align: center; margin-top: 48px; font-size: 12px; color: var(--muted); }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Navbar ─── -->
+<nav class="navbar">
+  <a class="navbar-brand" href="#">
+    <div class="navbar-brand-icon">🏛️</div>
+    Delhi Civic <span>Navigator</span>
+  </a>
+  <div class="navbar-links">
+    <a href="#" class="active">🏠 Home</a>
+    <a href="#services-section">📋 Services</a>
+    <a href="http://localhost:8000/api/health" target="_blank">⚡ API Status</a>
+    <a href="https://edistrict.delhigovt.nic.in" target="_blank">🌐 e-District</a>
+    <a href="https://github.com/gauravpareta27-cloud/Delhi-Civic-Navigator-AI" target="_blank" class="navbar-cta">⭐ GitHub</a>
+  </div>
+</nav>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-icon">🏛️</div>
+    <h1>Delhi Civic <span>Navigator AI</span></h1>
+    <p class="tagline">Get official document checklists for Delhi government services in seconds.</p>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="query" type="text" placeholder="e.g. 'Birth Certificate' or 'Driving Licence fees'" autocomplete="off" />
+    <button id="searchBtn" onclick="doSearch()">Search</button>
+  </div>
+
+  <!-- Chips -->
+  <div class="chips" id="services-section">
+    <span class="chip-label">Try:</span>
+    <button class="chip" onclick="setQuery('Birth Certificate')">Birth Certificate</button>
+    <button class="chip" onclick="setQuery('Driving Licence')">Driving Licence</button>
+    <button class="chip" onclick="setQuery('Income Certificate')">Income Certificate</button>
+    <button class="chip" onclick="setQuery('Property Tax')">Property Tax</button>
+    <button class="chip" onclick="setQuery('Water Connection')">Water Connection</button>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-wrap" id="spinner">
+    <div class="spinner"></div>
+    <p>Searching Elasticsearch & generating response…</p>
+  </div>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Result -->
+  <div class="result" id="result">
+    <div class="result-header">
+      <div class="service-name" id="serviceName"></div>
+      <div class="dept-tag">🏢 <span id="deptName"></span></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div>
+          <div class="stat-label">Processing Time</div>
+          <div class="stat-value" id="statTime"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div>
+          <div class="stat-label">Fees</div>
+          <div class="stat-value" id="statFees"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📍</div>
+        <div>
+          <div class="stat-label">Jurisdiction</div>
+          <div class="stat-value">Delhi, India</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-body">
+      <!-- Eligibility -->
+      <div>
+        <div class="section-title">✅ Eligibility</div>
+        <div class="section-box">
+          <p id="eligText"></p>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <div>
+        <div class="section-title">📄 Required Documents</div>
+        <div class="section-box">
+          <ul class="doc-list" id="docList"></ul>
+        </div>
+      </div>
+
+      <!-- Steps (full width) -->
+      <div style="grid-column: 1 / -1;">
+        <div class="section-title">🗺️ How to Apply</div>
+        <div class="section-box">
+          <ol class="steps-list" id="stepsList"></ol>
+        </div>
+      </div>
+    </div>
+
+    <div class="cite-bar">
+      <span class="cite-label"><span class="live-dot"></span>Official government source</span>
+      <a class="cite-link" id="sourceLink" href="#" target="_blank" rel="noopener">
+        Visit Official Website ↗
+      </a>
+    </div>
+  </div>
+
+  <footer>Built for the 4-Hour Hackathon &nbsp;•&nbsp; Powered by Elasticsearch + Gemini AI &nbsp;•&nbsp; Delhi Government Official Sources</footer>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  function setQuery(q) {
+    document.getElementById('query').value = q;
+    doSearch();
+  }
+
+  document.getElementById('query').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  function parseSection(text, title) {
+    const regex = new RegExp(title + ':\\n([\\s\\S]*?)(?=\\n\\n[A-Za-z ]+:|$)', 'i');
+    const m = text.match(regex);
+    return m ? m[1].trim() : '';
+  }
+
+  async function doSearch() {
+    const q = document.getElementById('query').value.trim();
+    if (!q) return;
+
+    // Show spinner
+    document.getElementById('spinner').style.display = 'block';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('searchBtn').disabled = true;
+
+    try {
+      const res = await fetch(`${API}/api/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: q })
+      });
+
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      renderResult(data.response);
+    } catch (err) {
+      const eb = document.getElementById('errorBox');
+      eb.textContent = '❌ Could not reach the backend. Make sure the backend server is running on port 8000.';
+      eb.style.display = 'block';
+    } finally {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('searchBtn').disabled = false;
+    }
+  }
+
+  function renderResult(text) {
+    const service   = parseSection(text, 'Service');
+    const dept      = parseSection(text, 'Department');
+    const elig      = parseSection(text, 'Eligibility');
+    const docs      = parseSection(text, 'Required Documents');
+    const fees      = parseSection(text, 'Fees');
+    const time      = parseSection(text, 'Processing Time');
+    const stepsRaw  = parseSection(text, 'How to Apply');
+    const source    = parseSection(text, 'Official Source');
+
+    document.getElementById('serviceName').textContent = service || 'Service Details';
+    document.getElementById('deptName').textContent    = dept    || 'Delhi Government';
+    document.getElementById('statTime').textContent    = time    || 'N/A';
+    document.getElementById('statFees').textContent    = fees    || 'N/A';
+    document.getElementById('eligText').textContent    = elig    || 'N/A';
+
+    // Documents
+    const docList = document.getElementById('docList');
+    docList.innerHTML = '';
+    docs.split('\n').filter(d => d.trim()).forEach(d => {
+      const li = document.createElement('li');
+      li.textContent = d.replace(/^[•\-\*]\s*/, '');
+      docList.appendChild(li);
+    });
+
+    // Steps
+    const stepsList = document.getElementById('stepsList');
+    stepsList.innerHTML = '';
+    let n = 1;
+    stepsRaw.split('\n').filter(s => s.trim()).forEach(s => {
+      const li = document.createElement('li');
+      li.className = 'step-item';
+      li.innerHTML = `<span class="step-num">${n++}</span><span>${s.replace(/^Step \d+:\s*/i, '')}</span>`;
+      stepsList.appendChild(li);
+    });
+
+    // Source link
+    const link = document.getElementById('sourceLink');
+    if (source && source.startsWith('http')) {
+      link.href = source;
+      link.textContent = source.replace(/^https?:\/\//, '') + ' ↗';
+    } else {
+      link.href = '#';
+      link.textContent = source || 'Official Portal ↗';
+    }
+
+    document.getElementById('result').style.display = 'block';
+  }
+</script>
+</body>
+</html>
